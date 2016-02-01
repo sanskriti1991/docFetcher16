@@ -93,6 +93,7 @@ public final class ParseService {
 		new SvgParser(),
 		new EpubParser(),
 		new ChmParser(),
+		new DRTestParser(),
 		
 		new OpenOfficeWriterParser(),
 		new OpenOfficeCalcParser(),

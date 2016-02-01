@@ -137,7 +137,7 @@ public enum Msg {
 		"Document Types",
 		"Label for the filter control on the left of the GUI that allows the " +
 		"user to filter the search results by document type."),
-	search_scope ("Search Scope",
+	search_scope ("SEARCH SCOPE",
 		"Label for the control on the left of the GUI that allows the user " +
 		"to filter the search results by location, and to perform various " +
 		"index-related operations, such as creating new indexes."),
@@ -171,7 +171,7 @@ public enum Msg {
 	filetype_txt ("Plain Text", Comments.filetype),
 	filetype_flac ("FLAC (flac)", Comments.filetype),
 	filetype_epub ("EPUB (epub)", Comments.filetype),
-	
+	filetype_drtest ("DRTest", Comments.filetype),
 	// Search scope context menu entries
 	create_index_from (
 		"Create Index From",

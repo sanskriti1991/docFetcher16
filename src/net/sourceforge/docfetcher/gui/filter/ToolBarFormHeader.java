@@ -16,6 +16,7 @@ import net.sourceforge.docfetcher.util.Util;
 import net.sourceforge.docfetcher.util.annotations.NotNull;
 import net.sourceforge.docfetcher.util.annotations.Nullable;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -83,7 +84,9 @@ class ToolBarFormHeader extends CustomBorderComposite {
 	public final void setText(@NotNull String text) {
 		textLabel.setText(text);
 	}
-
+	public final void setTextColor(Color colorname) {
+		textLabel.setForeground(colorname);
+	}
 	@Nullable
 	protected Control createToolBar(Composite parent) {
 		return null;

@@ -15,6 +15,7 @@ import net.sourceforge.docfetcher.enums.Img;
 import net.sourceforge.docfetcher.util.Util;
 import net.sourceforge.docfetcher.util.annotations.NotNull;
 import net.sourceforge.docfetcher.util.annotations.Nullable;
+import net.sourceforge.docfetcher.util.gui.Col;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -294,6 +295,7 @@ public abstract class TwoFormExpander extends Composite {
 	public final void setTopText(@NotNull String text) {
 		formTop0.setText(text);
 		formTop.setText(text);
+		formTop.setTextColor(Col.RED.get());
 	}
 	
 	public final void setBottomText(@NotNull String text) {
