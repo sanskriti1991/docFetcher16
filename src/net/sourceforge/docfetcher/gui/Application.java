@@ -75,6 +75,9 @@ import net.sourceforge.docfetcher.util.gui.dialog.MultipleChoiceDialog;
 
 import org.apache.lucene.index.MergePolicy;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
@@ -84,13 +87,24 @@ import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.Sash;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Widget;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
@@ -98,6 +112,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
+
+
+
 
 public final class Application {
 
@@ -125,6 +142,7 @@ public final class Application {
 	private static StatusBar statusBar;
 	private static boolean systemTrayShutdown = false;
 	private static File settingsConfFile;
+
 	
 	private static boolean indexRegistryLoaded = false; // should only be accessed from SWT thread
 	private static Runnable clearIndexLoadingMsg; // should only be accessed from SWT thread
@@ -133,7 +151,10 @@ public final class Application {
 		throw new UnsupportedOperationException();
 	}
 
+	 
+
 	public static void main(String[] args) {
+		
 		/*
 		 * Bug #3553412: Starting with Java 7, calling Arrays.sort can cause an
 		 * IllegalArgumentException with the error message
@@ -284,52 +305,78 @@ public final class Application {
 
 		SettingsConf.ShellBounds.MainWindow.bind(shell);
 		SettingsConf.Bool.MainShellMaximized.bindMaximized(shell);
-		shell.setLayout(new FormLayout());
+		shell.setLayout(new FillLayout());
 		shell.setText(shellTitle);
 
-		initCocoaMenu(display);
-		initSystemTrayHider();
-		initThreePanelForm();
-		initStatusBar();
-		initHotkey();
-		initGlobalKeys(display);
+		CreateSearchTabs CreateSearchTabsObject = new CreateSearchTabs(shell);
+		
+		//menu bar to add new search tabs
+		Menu menuBar = new Menu(shell, SWT.BAR);
+        MenuItem cascadeFileMenu = new MenuItem(menuBar, SWT.CASCADE);
+        cascadeFileMenu.setText(Msg.menu_bar_title1_msg.get());
+        
+        Menu fileMenu = new Menu(shell, SWT.DROP_DOWN);
+        cascadeFileMenu.setMenu(fileMenu);
 
-		new SearchQueue(
-			searchBar, filesizePanel, fileTypePanel, indexPanel, resultPanel,
-			statusBar);
+        MenuItem createNewTabItem = new MenuItem(fileMenu, SWT.PUSH);
+        createNewTabItem.setText(Msg.menu_item1_msg.get());
+        shell.setMenuBar(menuBar);
+        
+        createNewTabItem.addListener(SWT.Selection, event-> {
+        	//create new tab and add new search from to the tab
+        	Display display1 = shell.getDisplay();
+        	//create new tab 
+        	CTabItem cbt =  CreateSearchTabsObject.createTabItem();
+        	//create new sashForm 
+        	SashForm sashForm = CreateSearchTabsObject.createSashForm();
+    		
+    		initCocoaMenu(display1);
+    		initSystemTrayHider();
+    		initThreePanelForm(sashForm);
+    		initStatusBar(sashForm);
+    		initHotkey();
+    		initGlobalKeys(display1);
+    		
+    		new SearchQueue(
+    			searchBar, filesizePanel, fileTypePanel, indexPanel, resultPanel,
+    			statusBar);
 
-		FormDataFactory fdf = FormDataFactory.getInstance();
-		fdf.bottom().left().right().applyTo(statusBar);
-		fdf.top().bottom(statusBar).applyTo(threePanelForm);
+    		FormDataFactory fdf = FormDataFactory.getInstance();
+    		fdf.bottom().left().right().applyTo(statusBar);
+    		fdf.top().bottom(statusBar).applyTo(threePanelForm);
 
-		// Move focus to search text field
-		searchBar.setFocus();
+    		// Move focus to search text field
+    		searchBar.setFocus();
 
-		// Try to show the manual in the embedded browser
-		boolean showManualHint = true;
-		if (SettingsConf.Bool.ShowManualOnStartup.get()
-				&& SettingsConf.Bool.ShowPreviewPanel.get()) {
-			File file = ManualLocator.getManualFile();
-			if (file == null) {
-				showManualHint = false;
-				String msg = Msg.file_not_found.get() + "\n" + ManualLocator.manualFilename;
-				AppUtil.showError(msg, true, true);
-			}
-			else if (previewPanel.setHtmlFile(file)) {
-				showManualHint = false;
-			}
-		}
-		if (showManualHint) {
-			String msg = Msg.press_f1_for_help.get();
-			statusBar.getLeftPart().setContents(Img.HELP.get(), msg);
-		}
+    		// Try to show the manual in the embedded browser
+    		boolean showManualHint = true;
+    		if (SettingsConf.Bool.ShowManualOnStartup.get()
+    				&& SettingsConf.Bool.ShowPreviewPanel.get()) {
+    			File file = ManualLocator.getManualFile();
+    			if (file == null) {
+    				showManualHint = false;
+    				String msg = Msg.file_not_found.get() + "\n" + ManualLocator.manualFilename;
+    				AppUtil.showError(msg, true, true);
+    			}
+    			else if (previewPanel.setHtmlFile(file)) {
+    				showManualHint = false;
+    			}
+    		}
+    		if (showManualHint) {
+    			String msg = Msg.press_f1_for_help.get();
+    			statusBar.getLeftPart().setContents(Img.HELP.get(), msg);
+    		}
+    		//add sashForm to tab
+    		CreateSearchTabsObject.setSashForm(cbt, sashForm);
+        	
+        });
 
-		shell.addShellListener(new ShellAdapter() {
+        shell.addShellListener(new ShellAdapter() {
 			public void shellClosed(final ShellEvent e) {
 				handleShellClosed(e);
 			}
 		});
-
+		
 		shell.open();
 		while (!shell.isDisposed()) {
 			try {
@@ -1007,9 +1054,9 @@ public final class Application {
 	}
 
 	@NotNull
-	private static void initThreePanelForm() {
+	private static void initThreePanelForm(SashForm sashForm) {
 		int filterPanelWidth = SettingsConf.Int.FilterPanelWidth.get();
-		threePanelForm = new ThreePanelForm(shell, filterPanelWidth) {
+		threePanelForm = new ThreePanelForm(sashForm, filterPanelWidth) {
 			protected Control createFirstControl(Composite parent) {
 				return createLeftPanel(parent);
 			}
@@ -1101,6 +1148,7 @@ public final class Application {
 				ignoreControlResize[0] = false;
 			}
 		});
+		
 	}
 
 	@NotNull
@@ -1111,8 +1159,8 @@ public final class Application {
 	}
 
 	@NotNull
-	private static void initStatusBar() {
-		statusBar = new StatusBar(shell) {
+	private static void initStatusBar(SashForm sashForm) {
+		statusBar = new StatusBar(sashForm) {
 			public List<StatusBarPart> createRightParts(StatusBar statusBar) {
 				indexingStatus = new StatusBarPart(statusBar, true);
 				indexingStatus.setContents(Img.INDEXING.get(), Msg.indexing.get());

@@ -642,7 +642,9 @@ public enum Msg {
 	advanced_settings_link (
 		"Advanced Settings",
 		"Hyperlink on preferences dialog to configuration file containing advanced settings."),
-	
+	menu_bar_title1_msg("&File"),
+	menu_item1_msg("New Search"),
+	searchTab_msg("Search Tab"),
 	// Hotkeys
 	f1 ("F1"),
 	f2 ("F2"),
