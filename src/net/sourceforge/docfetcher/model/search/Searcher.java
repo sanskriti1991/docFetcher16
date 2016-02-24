@@ -25,6 +25,7 @@ import java.util.concurrent.locks.Lock;
 import net.sourceforge.docfetcher.enums.Msg;
 import net.sourceforge.docfetcher.enums.ProgramConf;
 import net.sourceforge.docfetcher.enums.SettingsConf;
+import net.sourceforge.docfetcher.gui.SearchBar;
 import net.sourceforge.docfetcher.model.Fields;
 import net.sourceforge.docfetcher.model.IndexLoadingProblems.CorruptedIndex;
 import net.sourceforge.docfetcher.model.IndexRegistry;
@@ -282,17 +283,38 @@ public final class Searcher {
 			ScoreDoc[] scoreDocs = luceneSearcher.search(query, MAX_RESULTS).scoreDocs;
 
 			// Create result documents
-			ResultDocument[] results = new ResultDocument[scoreDocs.length];
+			List<ResultDocument> results = new ArrayList<ResultDocument>();
 			for (int i = 0; i < scoreDocs.length; i++) {
 				Document doc = luceneSearcher.doc(scoreDocs[i].doc);
 				float score = scoreDocs[i].score;
 				LuceneIndex index = indexes.get(luceneSearcher.subSearcher(i));
 				IndexingConfig config = index.getConfig();
-				results[i] = new ResultDocument(
+				ResultDocument tempresults = new ResultDocument(
 					doc, score, query, isPhraseQuery, config, fileFactory,
 					outlookMailFactory);
+				//@sans: if case sensitive then check if matched in the document
+				try {
+					if(tempresults.getHighlightedText().getRangeCount()>0 && SearchBar.matchCase)
+					{
+						results.add( new ResultDocument(
+								doc, score, query, isPhraseQuery, config, fileFactory,
+								outlookMailFactory) );
+					}
+					else if(!SearchBar.matchCase){
+						results.add( new ResultDocument(
+								doc, score, query, isPhraseQuery, config, fileFactory,
+								outlookMailFactory) );
+					}
+				} catch (net.sourceforge.docfetcher.model.parse.ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-			return Arrays.asList(results);
+			ResultDocument[] results1 = new ResultDocument[results.size()];
+			for (int i = 0; i < results.size(); i++) {
+				results1[i]=results.get(i);
+			}
+			return Arrays.asList(results1);
 		}
 		catch (IllegalArgumentException e) {
 			throw wrapEmptyIndexException(e);

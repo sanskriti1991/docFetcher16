@@ -31,6 +31,7 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
@@ -38,6 +39,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.ToolBar;
+
 
 /**
  * @author Tran Nam Quang
@@ -55,15 +57,29 @@ public final class SearchBar {
 	private final Composite comp;
 	private final Combo searchBox;
 	private final Button searchBt;
+	//sans:add checkbox match case
+	public static Boolean matchCase = false;
+	private final Button matchCaseCheckBox;
+	SelectionListener selectionListener;
+	
 	private final ToolBar toolBar;
 	private final MemoryList<String> searchHistory;
 
 	public SearchBar(@NotNull Composite parent, @NotNull final File programConfFile) {
+		matchCase = false;
 		comp = new CustomBorderComposite(parent) {
 			public Point computeSize(int wHint, int hHint, boolean changed) {
 				return SearchBar.this.computeSize(wHint, hHint);
 			}
 		};
+		//@sans:checkbox function for match case
+		selectionListener = new SelectionAdapter () {
+	         public void widgetSelected(SelectionEvent event) {
+	            Button button = ((Button) event.widget);
+	            matchCase = button.getSelection();
+	         };
+	      };
+
 		searchBox = new Combo(comp, SWT.BORDER);
 		searchBox.setVisibleItemCount(ProgramConf.Int.SearchHistorySize.get());
 		Util.selectAllOnFocus(searchBox);
@@ -75,6 +91,13 @@ public final class SearchBar {
 					evtSearch.fire(query);
 			}
 		});
+
+
+		//sans: add checkbox
+		matchCaseCheckBox= new Button(comp,SWT.CHECK);
+		matchCaseCheckBox.setText(Msg.match_case.get());
+		matchCaseCheckBox.addSelectionListener(selectionListener);
+		
 
 		// Load search history
 		searchHistory = new MemoryList<String>(ProgramConf.Int.SearchHistorySize.get());
@@ -90,6 +113,7 @@ public final class SearchBar {
 					evtSearch.fire(query);
 			}
 		});
+
 
 		toolBar = new ToolBar(comp, SWT.FLAT);
 		ToolItemFactory tif = new ToolItemFactory(toolBar);
@@ -141,6 +165,7 @@ public final class SearchBar {
 			public void controlResized(ControlEvent e) {
 				Point searchBoxSize = computeSize(searchBox);
 				Point searchBtSize = computeSize(searchBt);
+				Point matchCaseSize = computeSize(matchCaseCheckBox);
 				Point toolBarSize = computeSize(toolBar);
 
 				Rectangle clientArea = comp.getClientArea();
@@ -149,6 +174,7 @@ public final class SearchBar {
 
 				int spaceLeft = caWidth;
 				spaceLeft -= toolBarSize.x;
+				spaceLeft -= matchCaseSize.x;
 				spaceLeft -= searchBtSize.x;
 				spaceLeft -= 5; // spacing between search button and toolbar
 
@@ -156,7 +182,10 @@ public final class SearchBar {
 				int searchBoxWidth = Util.clamp(spaceLeft, 0, searchBoxMaxWidth);
 				setBounds(searchBox, MARGIN, searchBoxWidth, caHeight, searchBoxSize.y);
 
-				int searchBtX = MARGIN + searchBox.getSize().x + SPACING;
+				int matchCaseBtX = MARGIN + searchBox.getSize().x + SPACING ;
+				setBounds(matchCaseCheckBox, matchCaseBtX, matchCaseSize.x, caHeight, matchCaseSize.y);
+				
+				int searchBtX = MARGIN + searchBox.getSize().x + SPACING + 100;
 				setBounds(searchBt, searchBtX, searchBtSize.x, caHeight, searchBtSize.y);
 
 				int toolBarX = caWidth - MARGIN - toolBarSize.x;
@@ -178,17 +207,20 @@ public final class SearchBar {
 	@NotNull
 	private Point computeSize(int wHint, int hHint) {
 		Point searchBoxSize = computeSize(searchBox);
+		Point matchCaseSize = computeSize(matchCaseCheckBox);
 		Point searchBtSize = computeSize(searchBt);
 		Point toolBarSize = computeSize(toolBar);
 
 		int width = 0;
 		width += searchBoxSize.x;
+		width += matchCaseSize.x;
 		width += searchBtSize.x;
 		width += toolBarSize.x;
 		width += MARGIN * 2 + SPACING * 2;
 
 		int height = Math.max(searchBoxSize.y, searchBtSize.y);
 		height = Math.max(height, toolBarSize.y);
+		height = Math.max(height, matchCaseSize.y);
 		height += MARGIN * 2;
 
 		if (wHint != SWT.DEFAULT)
@@ -229,6 +261,7 @@ public final class SearchBar {
 	public void setEnabled(boolean enabled) {
 		searchBox.setEnabled(enabled);
 		searchBt.setEnabled(enabled);
+		matchCaseCheckBox.setEnabled(enabled);
 	}
 
 	public boolean setFocus() {

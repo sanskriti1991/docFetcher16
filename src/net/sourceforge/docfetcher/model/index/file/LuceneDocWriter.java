@@ -83,6 +83,8 @@ abstract class LuceneDocWriter {
 		 * the user searches for the filename without extension.
 		 */
 		luceneDoc.add(Fields.createContent(parseResult.getContent()));
+		//sans: add double field for content in lowercase to create multiple indices 
+		luceneDoc.add(Fields.createContent(parseResult.getContent().toString().toLowerCase()));
 		StringBuilder metadata = parseResult.getMetadata();
 		metadata.append(filename);
 		String basename = Util.splitFilename(filename)[0];

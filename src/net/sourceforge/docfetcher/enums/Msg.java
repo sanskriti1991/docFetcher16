@@ -504,6 +504,8 @@ public enum Msg {
 	// Indexing dialog: Pattern table
 	pattern_regex ("Pattern (regex)"),
 	match_against ("Match Against"),
+	//sans: match case
+	match_case ("Match Case"),
 	relative_path ("Relative path"),
 	absolute_path ("Absolute path"),
 	action ("Action"),

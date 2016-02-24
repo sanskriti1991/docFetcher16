@@ -14,6 +14,7 @@ package net.sourceforge.docfetcher.model.index.file;
 import java.io.Closeable;
 import java.io.IOException;
 
+import net.sourceforge.docfetcher.gui.SearchBar;
 import net.sourceforge.docfetcher.model.index.IndexWriterAdapter;
 import net.sourceforge.docfetcher.util.CheckedOutOfMemoryError;
 import net.sourceforge.docfetcher.util.annotations.NotNull;
@@ -29,7 +30,10 @@ final class SimpleDocWriter extends LuceneDocWriter implements Closeable {
 	private final IndexWriterAdapter writer;
 	
 	public SimpleDocWriter(@NotNull Directory luceneDir) throws IOException {
+		//sans: to create all indices at once
+		SearchBar.matchCase = true;
 		writer = new IndexWriterAdapter(luceneDir);
+		SearchBar.matchCase = false;
 	}
 	
 	protected boolean appendMetadata() {

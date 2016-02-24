@@ -27,9 +27,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.apache.lucene.analysis.*;
 
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyException;
@@ -55,15 +58,13 @@ import net.sourceforge.docfetcher.util.collect.LazyList;
 import net.sourceforge.docfetcher.util.concurrent.BlockingWrapper;
 import net.sourceforge.docfetcher.util.concurrent.DelayedExecutor;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.ReusableAnalyzerBase;
-import org.apache.lucene.analysis.StopFilter;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.ReusableAnalyzerBase.TokenStreamComponents;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardFilter;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.util.CharacterUtils;
 import org.apache.lucene.util.Version;
 
 import com.google.common.collect.ImmutableList;
@@ -71,6 +72,7 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import com.google.common.primitives.Longs;
 
+import net.sourceforge.docfetcher.gui.SearchBar;
 /**
  * @author Tran Nam Quang
  */
@@ -140,10 +142,13 @@ public final class IndexRegistry {
 		if (analyzer == null) {
 			if (ProgramConf.Int.Analyzer.get() == 1) {
 				analyzer = new SourceCodeAnalyzer(LUCENE_VERSION);
-			} else {
+			} 
+			else {
 				analyzer = new StandardAnalyzer(LUCENE_VERSION, Collections.EMPTY_SET);
 			}
 		}
+		//sans:check if checkbox for match word true
+		analyzer = new CaseSensitiveAnalyzer(LUCENE_VERSION,SearchBar.matchCase);
 		return analyzer;
 	}
 
@@ -609,5 +614,60 @@ public final class IndexRegistry {
 			return new TokenStreamComponents(source, sink);
 		}
 	}
+	
+	private static class CaseSensitiveAnalyzer extends ReusableAnalyzerBase {
+		private Version matchVersion;
+		private Boolean	match;
+		  /** Default maximum allowed token length */
+		  public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
 
+		  private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
+		  
+		  /** An unmodifiable set containing some common English words that are usually not
+		  useful for searching. */
+		  public static final Set<?> stopwords = StopAnalyzer.ENGLISH_STOP_WORDS_SET; 
+		  
+		public CaseSensitiveAnalyzer(Version matchVersion, Boolean match) {
+			//super(matchVersion, stopWords);
+			this.matchVersion = matchVersion;
+			this.match = match;
+		}
+
+		/*@Override
+		protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
+			final Tokenizer source = new StandardTokenizer(matchVersion, reader);
+			TokenStream sink = new StandardFilter(matchVersion, source);
+			//sink = new LowerCaseFilter(matchVersion, sink);
+		    sink = new StopFilter(matchVersion, sink, Collections.EMPTY_SET, false);
+		    //sink = new SourceCodeTokenFilter(matchVersion, sink);
+			return new TokenStreamComponents(source, sink);
+		}*/
+		public void setMaxTokenLength(int length) {
+		    maxTokenLength = length;
+		  }
+		    
+		 
+		  /**
+		   * @see #setMaxTokenLength
+		   */
+		  public int getMaxTokenLength() {
+		    return maxTokenLength;
+		  }
+		@Override
+		  protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
+		    final StandardTokenizer src = new StandardTokenizer(matchVersion, reader);
+		    src.setMaxTokenLength(maxTokenLength);
+		    //src.setReplaceInvalidAcronym(replaceInvalidAcronym);
+		    TokenStream tok = new StandardFilter(matchVersion, src);
+		    if(!this.match)
+		    	tok = new LowerCaseFilter(matchVersion, tok);
+		    tok = new StopFilter(matchVersion, tok, stopwords);
+		    return new TokenStreamComponents(src, tok) ;
+		    		}
+		/*@Override
+		  protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
+		    return new TokenStreamComponents(new KeywordTokenizer(reader));
+		  }*/
+	}
+	
 }
